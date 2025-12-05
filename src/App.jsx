@@ -22,7 +22,7 @@ import {
 // ==========================================
 // 1. 配置区域 (在此处填入你的 DeepSeek API Key)
 // ==========================================
-const apiKey = ""; // 🔴在此处填入你的 DeepSeek API Key (以 sk- 开头)
+const apiKey = "sk-84f75b3c03a8458ca3679739aece727a"; // 🔴在此处填入你的 DeepSeek API Key (以 sk- 开头)
 
 // ==========================================
 // 2. AI 核心逻辑 (已切换为 DeepSeek)
@@ -97,9 +97,9 @@ const callDeepSeek = async (prompt, gameContext = "") => {
 // ==========================================
 
 const SHOP_INFO = {
-  name: "极客电玩空间",
-  wifiName: "Geek_Guest_5G",
-  wifiPass: "geek8888",
+  name: "即刻主机游戏",
+  wifiName: "jkgame_5G",
+  wifiPass: "403403403",
   notice: "文明游戏，请勿用力摔手柄哦~"
 };
 
@@ -109,7 +109,7 @@ const CONSOLES = [
     name: 'PlayStation 5',
     color: 'from-blue-600 to-blue-800',
     intro: '次世代画质体验，独占大作丰富。',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/PlayStation_5_and_DualSense_wireless_controller.jpg/640px-PlayStation_5_and_DualSense_wireless_controller.jpg',
+    image: '/images/ps5.png',
     buttonLayout: [
       { label: "✕", color: "blue", desc: "确认 / 跳跃", usage: "美版/新游戏通用确认键" },
       { label: "〇", color: "red", desc: "取消 / 闪避", usage: "日版通用确认键" },
@@ -128,7 +128,7 @@ const CONSOLES = [
     name: 'Nintendo Switch',
     color: 'from-red-500 to-red-700',
     intro: '合家欢首选，适合多人聚会。',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/88/Nintendo_Switch_Console.png/640px-Nintendo_Switch_Console.png',
+    image: '/images/switch.jpg',
     buttonLayout: [
       { label: "A", color: "red", desc: "确认 / 确定", usage: "位于右侧" },
       { label: "B", color: "yellow", desc: "返回 / 取消", usage: "位于下方 (也是跳跃)" },
@@ -139,7 +139,8 @@ const CONSOLES = [
     ],
     guide: [
       { title: '拆分手柄', content: 'Joy-Con 手柄背部上方有黑色小圆钮，按住它向上滑出即可拆卸。' },
-      { title: '手柄顺序', content: '如果在游戏中手柄没反应，请在主页点击“手柄”图标 -> “更改握法/顺序”，同时按 L+R 激活。' }
+      { title: '手柄顺序', content: '如果在游戏中手柄没反应，请在主页点击“手柄”图标 -> “更改握法/顺序”，同时按 L+R 激活。' },
+      { title: '详细操作', content: 'https://switch-cn.gtgres.com/home/_dynamic/img/7f0516d.jpg?imageMogr2/format/webp/quality/100' }
     ]
   },
   {
@@ -147,7 +148,7 @@ const CONSOLES = [
     name: 'Xbox Series X',
     color: 'from-green-600 to-green-800',
     intro: 'XGP 游戏库丰富，性能强劲。',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/43/Xbox-series-x-console-controller-03.jpg/640px-Xbox-series-x-console-controller-03.jpg',
+    image: '/images/xbox.png',
     buttonLayout: [
       { label: "A", color: "green", desc: "确认 / 跳跃", usage: "位于下方" },
       { label: "B", color: "red", desc: "返回 / 蹲下", usage: "位于右侧" },
@@ -157,7 +158,8 @@ const CONSOLES = [
     ],
     guide: [
       { title: '快速恢复', content: 'Xbox 支持快速恢复游戏，直接点击游戏图标即可继续上次进度，无需重开。' },
-      { title: '回到主页', content: '按下中间发光的 Xbox 键，选择“主页”。' }
+      { title: '回到主页', content: '按下中间发光的 Xbox 键，选择“主页”。' },
+      { title: '详细操作', content: 'https://support.xbox.com/zh-CN/help/hardware-network/controller/get-to-know-your-xbox-series-x-s-controller' }
     ]
   }
 ];
