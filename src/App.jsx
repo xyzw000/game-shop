@@ -163,7 +163,9 @@ const GAMES = [
     players: "2人",
     image: "/images/it-takes-two.jpg", // 注意文件名是否一致
     description: "TGA年度最佳游戏，必须要两个人配合才能通关，非常考验默契。",
-    guide: [{ section: "复活", text: "狂按按键即可复活队友。" }]
+    guide: [{ section: "复活", text: "狂按按键即可复活队友。" },
+      { section: "视频攻略",link: "https://www.bilibili.com/video/BV14K4y1T7pp?spm_id_from=333.788.videopod.episodes&bvid=BV14K4y1T7pp&vd_source=62b0163ccb64ea35715ecb9b6b37edb6" },
+    ]
   },
   {
     id: 2,
