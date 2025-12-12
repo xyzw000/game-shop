@@ -29,7 +29,7 @@ const apiKey = "sk-84f75b3c03a8458ca3679739aece727a"; // 🔴 已填入你的 De
 // ==========================================
 // 2. AI 核心逻辑
 // ==========================================
-const callDeepSeek = async (prompt, gameContext = "") => {
+const callDeepSeek = async (history, gameContext = "") => {
   if (!apiKey) {
     return new Promise(resolve => setTimeout(() => {
       resolve("AI 助手：请检查 API Key 是否配置正确。");
@@ -49,6 +49,15 @@ const callDeepSeek = async (prompt, gameContext = "") => {
     3. 回答要简洁明了，适合手机阅读，多用 emoji。
   `;
 
+  // 构造完整的消息链：System Prompt + 聊天历史
+  const apiMessages = [
+    { role: "system", content: systemMessage },
+    ...history.map(msg => ({
+      role: msg.role, 
+      content: msg.content
+    }))
+  ];
+
   try {
     const response = await fetch(
       'https://api.deepseek.com/chat/completions',
@@ -60,10 +69,7 @@ const callDeepSeek = async (prompt, gameContext = "") => {
         },
         body: JSON.stringify({
           model: "deepseek-chat",
-          messages: [
-            { role: "system", content: systemMessage },
-            { role: "user", content: prompt }
-          ],
+          messages: apiMessages, // 🟢 发送完整对话历史
           temperature: 1.3,
           stream: false
         }),
@@ -165,7 +171,7 @@ const GAMES = [
     description: "TGA年度最佳游戏，必须要两个人配合才能通关，非常考验默契。",
     link:"https://www.bilibili.com/video/BV14K4y1T7pp?spm_id_from=333.788.videopod.episodes&bvid=BV14K4y1T7pp&vd_source=62b0163ccb64ea35715ecb9b6b37edb6",
     guide: [{ section: "复活", text: "狂按按键即可复活队友。" },
-      { section: "视频攻略",link: "https://www.bilibili.com/video/BV14K4y1T7pp?spm_id_from=333.788.videopod.episodes&bvid=BV14K4y1T7pp&vd_source=62b0163ccb64ea35715ecb9b6b37edb6" },
+      { section: "视频攻略",text: "见外部攻略。" },
     ]
     
   },
@@ -289,23 +295,38 @@ export default function GameLoungeApp() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, view]);
 
+  // 🟢 修复：发送消息时携带完整历史记录
   const handleSendMessage = async () => {
     if (!inputMessage.trim() || isAiLoading) return;
     const userMsg = inputMessage;
+    const newUserMessage = { role: 'user', content: userMsg };
+    
     setInputMessage("");
-    setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
+    
+    // 先更新界面显示
+    const newHistory = [...messages, newUserMessage];
+    setMessages(newHistory);
     setIsAiLoading(true);
-    const aiResponse = await callDeepSeek(userMsg);
+    
+    // 🟢 调用 AI 时传入完整历史
+    const aiResponse = await callDeepSeek(newHistory);
+    
     setMessages(prev => [...prev, { role: 'assistant', content: aiResponse }]);
     setIsAiLoading(false);
   };
 
-  const askAboutGame = (gameTitle) => {
+  const askAboutGame = (gameTitle, queryType) => {
     setView('ai-chat');
     const prompt = `请给我一份《${gameTitle}》的详细新手攻略和进阶技巧。`;
-    setMessages(prev => [...prev, { role: 'user', content: prompt }]);
+    const newUserMessage = { role: 'user', content: prompt };
+    
+    // 更新历史
+    const newHistory = [...messages, newUserMessage];
+    setMessages(newHistory);
+    
     setIsAiLoading(true);
-    callDeepSeek(prompt, gameTitle).then(res => {
+    // 🟢 传入历史和当前游戏上下文
+    callDeepSeek(newHistory, gameTitle).then(res => {
       setMessages(prev => [...prev, { role: 'assistant', content: res }]);
       setIsAiLoading(false);
     });
