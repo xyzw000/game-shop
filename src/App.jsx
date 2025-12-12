@@ -164,7 +164,7 @@ const GAMES = [
   {
     id: 1,
     title: "双人成行 (It Takes Two)",
-    platform: ["PS5", "Xbox", "PC"],
+    platform: ["PS5", "Xbox", "Switch"],
     tags: ["双人", "冒险"],
     players: "2人",
     image: "/images/双人成行.png", // 注意文件名是否一致
@@ -179,7 +179,7 @@ const GAMES = [
   {
     id: 2,
     title: "胡闹厨房 2 (Overcooked! 2)",
-    platform: ["Switch", "PS5"],
+    platform: ["PS5", "Xbox", "Switch"],
     tags: ["聚会", "模拟"],
     players: "1-4人",
     image: "/images/overcooked2.jpg",
@@ -208,9 +208,9 @@ const GAMES = [
   },
   
   // --- 新增：目录展示游戏 (需要你补充图片到 images 文件夹) ---
-  { id: 5, title: "NBA 2K24", platform: ["PS5", "Xbox"], tags: ["体育", "篮球"], players: "1-4人", image: "/images/nba2k24.jpg", description: "最真实的篮球模拟。", guide: [] },
-  { id: 6, title: "FC 24 (FIFA)", platform: ["PS5", "Xbox"], tags: ["体育", "足球"], players: "1-4人", image: "/images/fc24.jpg", description: "最新款足球游戏。", guide: [] },
-  { id: 7, title: "街头霸王 6", platform: ["PS5", "PC"], tags: ["格斗", "对战"], players: "2人", image: "/images/sf6.jpg", description: "拥有现代简易出招模式。", guide: [] },
+  { id: 5, title: "NBA 2K24", platform: ["PS5", "Xbox", "Switch"], tags: ["体育", "篮球"], players: "1-4人", image: "/images/nba2k24.jpg", description: "最真实的篮球模拟。", guide: [] },
+  { id: 6, title: "FC 24 (FIFA)", platform: ["PS5", "Xbox", "Switch"], tags: ["体育", "足球"], players: "1-4人", image: "/images/fc24.jpg", description: "最新款足球游戏。", guide: [] },
+  { id: 7, title: "街头霸王 6", platform: ["PS5", "Xbox"], tags: ["格斗", "对战"], players: "2人", image: "/images/sf6.jpg", description: "拥有现代简易出招模式。", guide: [] },
   { id: 8, title: "铁拳 8", platform: ["PS5"], tags: ["格斗", "硬核"], players: "2人", image: "/images/tekken8.jpg", description: "3D格斗游戏巅峰。", guide: [] },
   { id: 9, title: "超级马里奥：奥德赛", platform: ["Switch"], tags: ["冒险", "单人"], players: "1-2人", image: "/images/mario-odyssey.jpg", description: "箱庭探索神作。", guide: [] },
   { id: 10, title: "塞尔达：王国之泪", platform: ["Switch"], tags: ["冒险", "开放世界"], players: "1人", image: "/images/zelda-totk.jpg", description: "在海拉鲁大陆自由建造。", guide: [] },
@@ -474,7 +474,7 @@ export default function GameLoungeApp() {
               {game.title}
             </div>
             <div className="col-span-3 flex flex-wrap justify-center gap-1">
-              {game.platform.slice(0,2).map(p => (
+              {game.platform.slice(0,3).map(p => (
                 <span key={p} className="text-[10px] bg-gray-700 text-gray-300 px-1 rounded border border-gray-600 scale-90">{p}</span>
               ))}
             </div>
