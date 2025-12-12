@@ -16,47 +16,37 @@ import {
   Send,
   Bot,
   Loader2,
-  MessageSquare
+  MessageSquare,
+  List, // 新增图标
+  Tag   // 新增图标
 } from 'lucide-react';
 
 // ==========================================
-// 1. 配置区域 (在此处填入你的 DeepSeek API Key)
+// 1. 配置区域 (已保留你的 Key)
 // ==========================================
-const apiKey = "sk-84f75b3c03a8458ca3679739aece727a"; // 🔴在此处填入你的 DeepSeek API Key (以 sk- 开头)
+const apiKey = "sk-84f75b3c03a8458ca3679739aece727a"; // 🔴 已填入你的 DeepSeek Key
 
 // ==========================================
-// 2. AI 核心逻辑 (已切换为 DeepSeek)
+// 2. AI 核心逻辑
 // ==========================================
 const callDeepSeek = async (prompt, gameContext = "") => {
-  // 如果没有 Key，模拟一个延迟返回的演示数据
   if (!apiKey) {
     return new Promise(resolve => setTimeout(() => {
-      const demoReplies = [
-        "👋 演示模式(DeepSeek)：请填入 API Key 来激活我！我是由深度求索开发的智能助手。",
-        "🤖 AI核心未激活。DeepSeek 模型需要 Key 才能思考。填好后我可以告诉你《艾尔登法环》所有BOSS的弱点！",
-        "✨ 这是一个演示。我可以推荐游戏、查攻略。比如你可以问我：‘有什么适合情侣玩的游戏？’"
-      ];
-      resolve(demoReplies[Math.floor(Math.random() * demoReplies.length)]);
-    }, 1500));
+      resolve("AI 助手：请检查 API Key 是否配置正确。");
+    }, 1000));
   }
 
-  // DeepSeek 的 System Prompt 设置
   const systemMessage = `
-    你是一家名为“极客电玩空间”的电玩店的 AI 游戏助手。
+    你是一家名为“即刻主机游戏”的电玩店的 AI 游戏助手。
     你的任务是帮助顾客解决游戏卡关问题、推荐游戏、或解决主机操作问题。
     
-    店铺情况介绍：
-    1. 店铺拥有上百款主流主机游戏（PS5, Switch, Xbox Series X），涵盖市面上绝大多数热门大作。
-    2. 首页展示的仅为“热门精选列表”：${JSON.stringify(GAMES.map(g => g.title))}。
+    店铺拥有上百款游戏，首页展示的只是部分。
+    顾客当前正在查看的游戏是：${gameContext || "无"}。
     
     规则：
     1. 语气热情、专业、像一个资深的老玩家网管。
-    2. **推荐策略**：
-       - 顾客询问推荐游戏时，**请放开思路，推荐任何符合顾客要求的主流好游戏**，完全不要局限于“热门精选列表”。
-       - 如果推荐的游戏在“热门精选列表”中，顺便提一句“这个首页就有攻略哦”。
-       - 如果推荐的游戏不在列表中，请告知顾客“这款店里应该也有，可以去游戏架找找或者喊店员拿盘”。
+    2. 推荐策略：放开思路，推荐任何主流好游戏。如果店里库存列表里有，优先推荐。
     3. 回答要简洁明了，适合手机阅读，多用 emoji。
-    ${gameContext ? `顾客当前正在查看的游戏是：${gameContext}，请针对该游戏进行回答。` : ""}
   `;
 
   try {
@@ -66,34 +56,35 @@ const callDeepSeek = async (prompt, gameContext = "") => {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}` // DeepSeek 使用 Bearer Token 认证
+          'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify({
-          model: "deepseek-chat", // 指定使用 deepseek-chat 模型
+          model: "deepseek-chat",
           messages: [
             { role: "system", content: systemMessage },
             { role: "user", content: prompt }
           ],
-          temperature: 1.3 // 稍微提高一点创造性，让对话更有趣
+          temperature: 1.3,
+          stream: false
         }),
       }
     );
 
     if (!response.ok) {
-      const errData = await response.json();
+      const errData = await response.json().catch(() => ({}));
       throw new Error(errData.error?.message || 'API request failed');
     }
     
     const data = await response.json();
-    return data.choices?.[0]?.message?.content || "抱歉，我好像断线了，请重试一下。";
+    return data.choices?.[0]?.message?.content || "AI 暂时没有回应。";
   } catch (error) {
     console.error("DeepSeek API Error:", error);
-    return `AI 助手暂时有点忙 (${error.message})，请检查 API Key 是否正确。`;
+    return `AI 助手暂时有点忙，请重试。`;
   }
 };
 
 // ==========================================
-// 3. 数据源 (在此处添加/修改游戏)
+// 3. 数据源 (已合并你的店铺信息和新游戏列表)
 // ==========================================
 
 const SHOP_INFO = {
@@ -111,16 +102,16 @@ const CONSOLES = [
     intro: '次世代画质体验，独占大作丰富。',
     image: '/images/ps5.png',
     buttonLayout: [
-      { label: "✕", color: "blue", desc: "确认 / 跳跃", usage: "美版/新游戏通用确认键" },
-      { label: "〇", color: "red", desc: "取消 / 闪避", usage: "日版通用确认键" },
-      { label: "□", color: "pink", desc: "攻击 / 换弹", usage: "轻攻击 / 互动" },
-      { label: "△", color: "green", desc: "菜单 / 地图", usage: "重攻击 / 切换武器" },
-      { label: "PS", color: "black", desc: "主页键", usage: "长按回主菜单切游戏" },
+      { label: "✕", color: "blue", desc: "确认 / 跳跃", usage: "美版/新游戏通用" },
+      { label: "〇", color: "red", desc: "取消 / 闪避", usage: "日版通用" },
+      { label: "□", color: "pink", desc: "攻击 / 互动", usage: "轻攻击" },
+      { label: "△", color: "green", desc: "菜单 / 切换", usage: "重攻击" },
+      { label: "PS", color: "black", desc: "主页键", usage: "长按回主菜单" },
     ],
     guide: [
       { title: '手柄开机', content: '按下手柄中间的 PlayStation 徽标键即可唤醒主机。' },
-      { title: '换碟', content: '光驱在主机下方，光盘且面朝内插入。请联系店员协助换碟。' },
-      { title: '静音麦克风', content: '手柄中间 PS 键下方的白色小按钮，按下亮黄灯即为静音（建议常开静音）。' }
+      { title: '换碟', content: '光驱在主机下方，光盘且面朝内插入。' },
+      { title: '静音麦克风', content: '手柄中间 PS 键下方的白色小按钮，按下亮黄灯即为静音。' }
     ]
   },
   {
@@ -128,19 +119,18 @@ const CONSOLES = [
     name: 'Nintendo Switch',
     color: 'from-red-500 to-red-700',
     intro: '合家欢首选，适合多人聚会。',
-    image: '/images/switch.jpg',
+    image: '/images/switch.jpg', // 保留了你上传文件里的 .jpg 后缀
     buttonLayout: [
-      { label: "A", color: "red", desc: "确认 / 确定", usage: "位于右侧" },
-      { label: "B", color: "yellow", desc: "返回 / 取消", usage: "位于下方 (也是跳跃)" },
-      { label: "X", color: "black", desc: "菜单", usage: "位于上方" },
-      { label: "Y", color: "black", desc: "攻击", usage: "位于左侧" },
-      { label: "+", color: "black", desc: "开始 / 暂停", usage: "查看选项" },
-      { label: "⌂", color: "black", desc: "Home 键", usage: "回到系统桌面" },
+      { label: "A", color: "red", desc: "确认", usage: "右侧" },
+      { label: "B", color: "yellow", desc: "返回", usage: "下方" },
+      { label: "X", color: "black", desc: "菜单", usage: "上方" },
+      { label: "Y", color: "black", desc: "攻击", usage: "左侧" },
+      { label: "+", color: "black", desc: "开始", usage: "查看选项" },
+      { label: "⌂", color: "black", desc: "Home", usage: "回桌面" },
     ],
     guide: [
       { title: '拆分手柄', content: 'Joy-Con 手柄背部上方有黑色小圆钮，按住它向上滑出即可拆卸。' },
-      { title: '手柄顺序', content: '如果在游戏中手柄没反应，请在主页点击“手柄”图标 -> “更改握法/顺序”，同时按 L+R 激活。' },
-      { title: '详细操作', content: 'https://switch-cn.gtgres.com/home/_dynamic/img/7f0516d.jpg?imageMogr2/format/webp/quality/100' }
+      { title: '手柄顺序', content: '如果在游戏中手柄没反应，请在主页点击“手柄”图标 -> “更改握法/顺序”，同时按 L+R 激活。' }
     ]
   },
   {
@@ -150,168 +140,104 @@ const CONSOLES = [
     intro: 'XGP 游戏库丰富，性能强劲。',
     image: '/images/xbox.png',
     buttonLayout: [
-      { label: "A", color: "green", desc: "确认 / 跳跃", usage: "位于下方" },
-      { label: "B", color: "red", desc: "返回 / 蹲下", usage: "位于右侧" },
-      { label: "X", color: "blue", desc: "互动 / 换弹", usage: "位于左侧" },
-      { label: "Y", color: "yellow", desc: "切换 / 菜单", usage: "位于上方" },
-      { label: "≡", color: "black", desc: "菜单 (Menu)", usage: "暂停 / 设置" },
+      { label: "A", color: "green", desc: "确认", usage: "下方" },
+      { label: "B", color: "red", desc: "返回", usage: "右侧" },
+      { label: "X", color: "blue", desc: "互动", usage: "左侧" },
+      { label: "Y", color: "yellow", desc: "菜单", usage: "上方" },
+      { label: "≡", color: "black", desc: "菜单", usage: "暂停" },
     ],
     guide: [
-      { title: '快速恢复', content: 'Xbox 支持快速恢复游戏，直接点击游戏图标即可继续上次进度，无需重开。' },
-      { title: '回到主页', content: '按下中间发光的 Xbox 键，选择“主页”。' },
-      { title: '详细操作', content: 'https://support.xbox.com/zh-CN/help/hardware-network/controller/get-to-know-your-xbox-series-x-s-controller' }
+      { title: '快速恢复', content: 'Xbox 支持快速恢复游戏，直接点击游戏图标即可继续上次进度。' },
+      { title: '回到主页', content: '按下中间发光的 Xbox 键，选择“主页”。' }
     ]
   }
 ];
 
 const GAMES = [
+  // --- 热门精选 (保留你的原配置) ---
   {
     id: 1,
     title: "双人成行 (It Takes Two)",
     platform: ["PS5", "Xbox", "PC"],
-    tags: ["双人合作", "冒险", "必玩"],
+    tags: ["双人", "冒险"],
     players: "2人",
-    image: "https://upload.wikimedia.org/wikipedia/en/a/aa/It_Takes_Two_cover_art.jpg",
+    image: "/images/it-takes-two.jpg", // 注意文件名是否一致
     description: "TGA年度最佳游戏，必须要两个人配合才能通关，非常考验默契。",
-    guide: [
-      { section: "基本操作", text: "左摇杆移动，右摇杆视角，A/X 跳跃，RT/R2 射击/使用能力。" },
-      { section: "复活机制", text: "只要不是两人同时死亡，都可以无限快速复活。快速狂按显示出的按键即可复活。" },
-      { section: "新手提示", text: "游戏分为科迪(男)和小梅(女)，每关能力不同。遇到过不去的地方，多观察队友在做什么。" }
-    ],
-    link: "https://www.gamersky.com/handbook/202103/1373797.shtml"
+    guide: [{ section: "复活", text: "狂按按键即可复活队友。" }]
   },
   {
     id: 2,
     title: "胡闹厨房 2 (Overcooked! 2)",
     platform: ["Switch", "PS5"],
-    tags: ["聚会", "易吵架", "手速"],
+    tags: ["聚会", "模拟"],
     players: "1-4人",
-    image: "https://upload.wikimedia.org/wikipedia/en/c/c5/Overcooked_2_cover.jpg",
+    image: "/images/overcooked2.jpg",
     description: "充满混乱的烹饪游戏，需要在规定时间内切菜、煮菜、上菜。",
-    guide: [
-      { section: "核心玩法", text: "看左上角订单 -> 取材 -> 切菜 -> 烹饪 -> 装盘 -> 上菜。记得洗盘子！" },
-      { section: "投掷技巧", text: "按住投掷键可以将生食材直接扔进锅里或队友手里（熟食不能扔）。" },
-      { section: "灭火", text: "如果锅煮太久会起火，赶紧找灭火器按住喷射键灭火。" }
-    ]
+    guide: [{ section: "投掷", text: "按投掷键可以将生食材扔给队友。" }]
   },
   {
     id: 3,
     title: "马里奥赛车 8",
     platform: ["Switch"],
-    tags: ["竞速", "合家欢", "道具"],
+    tags: ["竞速", "合家欢"],
     players: "1-4人",
-    image: "https://upload.wikimedia.org/wikipedia/en/b/b5/MarioKart8Boxart.jpg",
+    image: "/images/mariokart8.jpg",
     description: "任天堂经典赛车，上手简单，精通难，道具战充满变数。",
-    guide: [
-      { section: "起步加速", text: "倒计时显示 '2' 的时候按住油门（A键），可以获得起步喷射。" },
-      { section: "漂移", text: "过弯时按住 R 键并推摇杆，喷出火花后松开 R 键可以加速。" },
-      { section: "防守", text: "拿到龟壳或香蕉皮，按住 L 键不放，可以挂在车后抵挡一次攻击。" }
-    ]
+    guide: [{ section: "漂移", text: "过弯时按住 R 键并推摇杆，喷出火花后松开 R 键可以加速。" }]
   },
   {
     id: 4,
     title: "艾尔登法环 (Elden Ring)",
-    platform: ["PS5", "Xbox", "PC"],
-    tags: ["硬核", "开放世界", "动作"],
+    platform: ["PS5", "Xbox"],
+    tags: ["硬核", "开放世界"],
     players: "1人",
-    image: "https://upload.wikimedia.org/wikipedia/en/7/7c/Elden_Ring_cover_art.jpg",
+    image: "/images/eldenring.jpg",
     description: "魂系开放世界神作，难度较高，但探索感无与伦比。",
-    guide: [
-      { section: "新手建议", text: "不要死磕一开始的'大树守卫'，绕过他去探索别的区域。" },
-      { section: "召唤灵魂", text: "获得'招魂铃'后，在屏幕左侧有墓碑图标的区域可以召唤骨灰助战。" },
-      { section: "地图标记", text: "打开地图(G/触控板)，看到像方尖碑的图标就是地图碎片位置，优先去捡。" }
-    ]
+    guide: [{ section: "地图", text: "优先找路边的石碑开启地图碎片。" }]
   },
-  {
-    id: 5,
-    title: "任天堂明星大乱斗",
-    platform: ["Switch"],
-    tags: ["格斗", "合家欢", "多人"],
-    players: "1-8人",
-    image: "https://upload.wikimedia.org/wikipedia/en/5/50/Super_Smash_Bros._Ultimate.jpg",
-    description: "汇集了任天堂及其他知名游戏角色的格斗游戏，规则是把对手击飞出版外。",
-    guide: [
-      { section: "基本规则", text: "受到攻击会增加百分比，百分比越高越容易被击飞。被击出屏幕外即为淘汰。" },
-      { section: "必杀技", text: "B键配合不同方向可以使出四种必杀技。A键为普通攻击。" }
-    ]
-  },
-  {
-    id: 6,
-    title: "人类一败涂地 (Human: Fall Flat)",
-    platform: ["Switch", "PS5", "Xbox"],
-    tags: ["解谜", "搞笑", "合作"],
-    players: "1-8人",
-    image: "https://upload.wikimedia.org/wikipedia/en/0/05/Human_Fall_Flat_cover.jpg",
-    description: "操作软绵绵的小人，利用物理引擎解谜通关，过程非常魔性搞笑。",
-    guide: [
-      { section: "爬墙", text: "双手举高跳向墙壁，然后交替松开和按下抓取键，配合摇杆可以向上爬。" },
-      { section: "提示", text: "卡关时可以寻找场景中的提示，或者利用队友的身体作为踏板。" }
-    ]
-  },
-  {
-    id: 7,
-    title: "茶杯头 (Cuphead)",
-    platform: ["Switch", "PS5", "Xbox", "PC"],
-    tags: ["动作", "射击", "硬核", "双人"],
-    players: "1-2人",
-    image: "https://upload.wikimedia.org/wikipedia/en/e/e6/Cuphead_cover.jpg",
-    description: "复古卡通风格的横版射击游戏，难度极高，专注于BOSS战。",
-    guide: [
-      { section: "格挡", text: "在空中按跳跃键可以格挡粉红色的物体，可以增加必杀技槽。" },
-      { section: "复活", text: "双人模式下，队友死亡时会灵魂升天，及时跳起来格挡灵魂可以复活队友。" }
-    ]
-  }
+  
+  // --- 新增：目录展示游戏 (需要你补充图片到 images 文件夹) ---
+  { id: 5, title: "NBA 2K24", platform: ["PS5", "Xbox"], tags: ["体育", "篮球"], players: "1-4人", image: "/images/nba2k24.jpg", description: "最真实的篮球模拟。", guide: [] },
+  { id: 6, title: "FC 24 (FIFA)", platform: ["PS5", "Xbox"], tags: ["体育", "足球"], players: "1-4人", image: "/images/fc24.jpg", description: "最新款足球游戏。", guide: [] },
+  { id: 7, title: "街头霸王 6", platform: ["PS5", "PC"], tags: ["格斗", "对战"], players: "2人", image: "/images/sf6.jpg", description: "拥有现代简易出招模式。", guide: [] },
+  { id: 8, title: "铁拳 8", platform: ["PS5"], tags: ["格斗", "硬核"], players: "2人", image: "/images/tekken8.jpg", description: "3D格斗游戏巅峰。", guide: [] },
+  { id: 9, title: "超级马里奥：奥德赛", platform: ["Switch"], tags: ["冒险", "单人"], players: "1-2人", image: "/images/mario-odyssey.jpg", description: "箱庭探索神作。", guide: [] },
+  { id: 10, title: "塞尔达：王国之泪", platform: ["Switch"], tags: ["冒险", "开放世界"], players: "1人", image: "/images/zelda-totk.jpg", description: "在海拉鲁大陆自由建造。", guide: [] },
+  { id: 11, title: "使命召唤 (COD)", platform: ["PS5", "Xbox"], tags: ["射击", "枪战"], players: "1-2人", image: "/images/cod.jpg", description: "好莱坞大片般的射击体验。", guide: [] },
+  { id: 12, title: "生化危机 4 重制版", platform: ["PS5"], tags: ["恐怖", "射击"], players: "1人", image: "/images/re4.jpg", description: "最经典的生化危机。", guide: [] },
+  { id: 13, title: "霍格沃茨之遗", platform: ["PS5"], tags: ["魔法", "冒险"], players: "1人", image: "/images/hogwarts.jpg", description: "哈利波特粉丝必玩。", guide: [] },
+  { id: 14, title: "漫威蜘蛛侠 2", platform: ["PS5"], tags: ["动作", "超级英雄"], players: "1人", image: "/images/spiderman2.jpg", description: "扮演蜘蛛侠在高楼间荡秋千。", guide: [] },
+  { id: 15, title: "舞力全开 (Just Dance)", platform: ["Switch"], tags: ["跳舞", "聚会"], players: "1-6人", image: "/images/justdance.jpg", description: "尬舞神器，运动暴汗。", guide: [] },
 ];
 
 // ==========================================
-// 4. UI 组件库
+// 4. UI 组件
 // ==========================================
 
-// 图片组件：加载失败自动显示占位符
 const ReliableImage = ({ src, alt, className, fallbackText }) => {
   const [error, setError] = useState(false);
   if (error || !src) {
     return (
-      <div className={`bg-gray-800 flex flex-col items-center justify-center text-gray-500 ${className}`}>
-        <ImageOff size={24} className="mb-2 opacity-50" />
-        <span className="text-xs font-medium text-center px-2">{fallbackText || alt}</span>
+      <div className={`bg-gray-800 flex flex-col items-center justify-center text-gray-500 border border-gray-700 ${className}`}>
+        <ImageOff size={20} className="mb-1 opacity-40" />
+        <span className="text-[10px] text-center px-1 truncate w-full">{fallbackText || alt}</span>
       </div>
     );
   }
   return <img src={src} alt={alt} className={className} onError={() => setError(true)} />;
 };
 
-// 手柄按键组件：CSS 绘制按键
 const ControllerButton = ({ label, color }) => {
-  const colorMap = {
-    "green": "bg-green-500 text-white",
-    "red": "bg-red-500 text-white",
-    "blue": "bg-blue-500 text-white",
-    "yellow": "bg-yellow-400 text-black",
-    "white": "bg-gray-200 text-gray-900",
-    "black": "bg-gray-800 text-white border-gray-600",
-    "pink": "bg-pink-500 text-white",
-  };
-  return (
-    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-sm border border-black/20 shrink-0 ${colorMap[color] || 'bg-gray-700 text-white'}`}>
-      {label}
-    </div>
-  );
+  const colorMap = { "green": "bg-green-500", "red": "bg-red-500", "blue": "bg-blue-500", "yellow": "bg-yellow-400 text-black", "white": "bg-gray-200 text-gray-900", "black": "bg-gray-800 border-gray-600", "pink": "bg-pink-500" };
+  return <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-sm border border-black/20 shrink-0 text-white ${colorMap[color] || 'bg-gray-700'}`}>{label}</div>;
 };
 
-// 聊天气泡组件
 const ChatMessage = ({ role, content }) => {
   const isUser = role === 'user';
   return (
     <div className={`flex w-full mb-4 ${isUser ? 'justify-end' : 'justify-start'}`}>
-      {!isUser && (
-        <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center mr-2 mt-1 shrink-0">
-          <Sparkles size={16} className="text-white" />
-        </div>
-      )}
-      <div className={`max-w-[80%] p-3 rounded-2xl text-sm leading-relaxed ${isUser ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-gray-800 text-gray-200 rounded-bl-none border border-gray-700'}`}>
-        {content}
-      </div>
+      {!isUser && <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center mr-2 mt-1 shrink-0"><Bot size={16} className="text-white"/></div>}
+      <div className={`max-w-[80%] p-3 rounded-2xl text-sm leading-relaxed ${isUser ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-gray-800 text-gray-200 rounded-bl-none border border-gray-700'}`}>{content}</div>
     </div>
   );
 };
@@ -340,13 +266,13 @@ const Card = ({ children, className = "", onClick }) => (
 // ==========================================
 
 export default function GameLoungeApp() {
-  const [view, setView] = useState('home'); // 'home', 'console', 'game-list', 'game-detail', 'ai-chat'
+  const [view, setView] = useState('home'); // home, console, game-list, game-catalog, game-detail, ai-chat
   const [selectedConsole, setSelectedConsole] = useState(null);
   const [selectedGame, setSelectedGame] = useState(null);
   const [showWifiModal, setShowWifiModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   
-  // AI 状态管理
+  // AI 状态
   const [messages, setMessages] = useState([
     { role: 'assistant', content: '你好！我是店里的 AI 游戏大神 ✨\n不知道玩什么？或者游戏卡关了？随时问我！' }
   ]);
@@ -369,10 +295,9 @@ export default function GameLoungeApp() {
     setIsAiLoading(false);
   };
 
-  const askAboutGame = (gameTitle, queryType) => {
+  const askAboutGame = (gameTitle) => {
     setView('ai-chat');
-    let prompt = "";
-    if (queryType === 'guide') prompt = `请给我一份《${gameTitle}》的详细新手攻略和进阶技巧。`;
+    const prompt = `请给我一份《${gameTitle}》的详细新手攻略和进阶技巧。`;
     setMessages(prev => [...prev, { role: 'user', content: prompt }]);
     setIsAiLoading(true);
     callDeepSeek(prompt, gameTitle).then(res => {
@@ -386,14 +311,11 @@ export default function GameLoungeApp() {
     textArea.value = text;
     document.body.appendChild(textArea);
     textArea.select();
-    try {
-      document.execCommand('copy');
-      alert("已复制: " + text);
-    } catch (err) { console.error('复制失败', err); }
+    try { document.execCommand('copy'); alert("已复制: " + text); } catch (err) { console.error('复制失败', err); }
     document.body.removeChild(textArea);
   };
 
-  // 过滤游戏
+  // 过滤逻辑
   const filteredGames = GAMES.filter(g => 
     g.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
     g.tags.some(t => t.includes(searchTerm))
@@ -403,6 +325,7 @@ export default function GameLoungeApp() {
 
   const renderHome = () => (
     <div className="space-y-6 pb-24 animate-fade-in">
+      {/* 头部 */}
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-white mb-1">欢迎来到{SHOP_INFO.name}</h1>
@@ -413,6 +336,7 @@ export default function GameLoungeApp() {
         </button>
       </div>
 
+      {/* AI 入口 */}
       <div onClick={() => setView('ai-chat')} className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-4 flex items-center justify-between cursor-pointer shadow-lg transform transition hover:scale-[1.02]">
         <div className="text-white">
           <div className="flex items-center gap-2 mb-1">
@@ -421,11 +345,27 @@ export default function GameLoungeApp() {
           </div>
           <p className="text-white/80 text-xs">问问 AI 大神，推荐全店百款游戏</p>
         </div>
-        <div className="bg-white/20 p-2 rounded-full backdrop-blur-sm">
-          <Bot size={24} className="text-white" />
-        </div>
+        <Bot size={28} className="text-white opacity-80" />
       </div>
 
+      {/* 新增：游戏目录入口 */}
+      <div 
+        onClick={() => setView('game-catalog')}
+        className="bg-gray-800 border border-gray-700 rounded-xl p-4 flex items-center justify-between cursor-pointer active:scale-95 transition hover:border-indigo-500/50"
+      >
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center text-green-400">
+            <List size={20} />
+          </div>
+          <div>
+            <h3 className="text-white font-bold">全部游戏清单</h3>
+            <p className="text-gray-400 text-xs">查看店里所有 {GAMES.length}+ 款游戏列表</p>
+          </div>
+        </div>
+        <ChevronLeft size={20} className="text-gray-500 rotate-180" />
+      </div>
+
+      {/* 主机入口 */}
       <section>
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold text-white flex items-center gap-2">
@@ -449,6 +389,7 @@ export default function GameLoungeApp() {
         </div>
       </section>
 
+      {/* 热门推荐 */}
       <section>
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold text-white flex items-center gap-2">
@@ -475,6 +416,109 @@ export default function GameLoungeApp() {
           ))}
         </div>
       </section>
+    </div>
+  );
+
+  // 新增：游戏目录清单视图
+  const renderCatalog = () => (
+    <div className="animate-fade-in pb-20 h-full flex flex-col">
+      <div className="flex items-center gap-3 mb-6 p-4 pb-0">
+        <button onClick={() => setView('home')} className="p-2 -ml-2 text-gray-400 hover:text-white"><ChevronLeft size={24} /></button>
+        <h1 className="text-xl font-bold text-white">全部游戏清单</h1>
+      </div>
+
+      <div className="px-4 mb-4 relative">
+        <Search className="absolute left-7 top-2.5 text-gray-500" size={16} />
+        <input type="text" placeholder="搜索游戏名、类型..." className="w-full bg-gray-800 text-white pl-10 pr-4 py-2 rounded-xl border border-gray-700 focus:border-indigo-500 outline-none text-sm" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-4 space-y-2">
+        {/* 表头 */}
+        <div className="grid grid-cols-12 gap-2 text-gray-500 text-xs font-bold px-2 mb-1">
+          <div className="col-span-6">游戏名称</div>
+          <div className="col-span-3 text-center">主机</div>
+          <div className="col-span-3 text-right">类型/人数</div>
+        </div>
+
+        {/* 列表内容 */}
+        {filteredGames.map(game => (
+          <div key={game.id} onClick={() => {setSelectedGame(game); setView('game-detail');}} className="bg-gray-800/50 border border-gray-700/30 rounded-lg p-3 grid grid-cols-12 gap-2 items-center cursor-pointer active:bg-gray-700 transition hover:border-indigo-500/30">
+            <div className="col-span-6 font-medium text-white text-sm truncate flex items-center gap-2">
+              <div className="w-1 h-8 bg-indigo-500 rounded-full shrink-0"></div>
+              {game.title}
+            </div>
+            <div className="col-span-3 flex flex-wrap justify-center gap-1">
+              {game.platform.slice(0,2).map(p => (
+                <span key={p} className="text-[10px] bg-gray-700 text-gray-300 px-1 rounded border border-gray-600 scale-90">{p}</span>
+              ))}
+            </div>
+            <div className="col-span-3 text-right flex flex-col items-end gap-0.5">
+              <span className="text-[10px] text-gray-400">{game.tags[0]}</span>
+              <span className="text-[10px] text-green-400 font-bold">{game.players}</span>
+            </div>
+          </div>
+        ))}
+        {filteredGames.length === 0 && <div className="text-center text-gray-500 mt-10 text-sm">没找到这个游戏</div>}
+      </div>
+    </div>
+  );
+
+  const renderGameDetail = () => (
+    <div className="animate-fade-in pb-24">
+       <div className="relative h-64 -mx-4 -mt-4 mb-6 group">
+         <ReliableImage src={selectedGame.image} alt={selectedGame.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"/>
+         <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/40 to-transparent"></div>
+         <button onClick={() => setView('home')} className="absolute top-4 left-4 bg-black/40 p-2 rounded-full text-white backdrop-blur-md z-10 hover:bg-black/60 transition"><ChevronLeft size={24} /></button>
+         <div className="absolute bottom-0 left-0 right-0 p-4">
+           <h1 className="text-2xl font-bold text-white mb-2 leading-tight drop-shadow-lg">{selectedGame.title}</h1>
+           <div className="flex flex-wrap gap-2">
+             {selectedGame.tags.map(tag => (
+               <span key={tag} className="px-2 py-0.5 bg-white/10 backdrop-blur-md rounded border border-white/20 text-xs text-white">{tag}</span>
+             ))}
+           </div>
+         </div>
+       </div>
+
+       <div className="space-y-6">
+         <section>
+           <Button variant="gemini" className="w-full flex items-center justify-between" onClick={() => askAboutGame(selectedGame.title)}>
+             <span className="flex items-center gap-2"><Sparkles size={18} /> 生成该游戏的 AI 深度攻略</span>
+             <ChevronLeft size={18} className="rotate-180" />
+           </Button>
+         </section>
+
+         <section>
+           <h2 className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-2 flex items-center gap-2"><Info size={14}/> 游戏简介</h2>
+           <p className="text-gray-300 text-sm leading-relaxed bg-gray-800/30 p-3 rounded-xl border border-gray-700/30">{selectedGame.description}</p>
+         </section>
+
+         <section>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-white font-bold flex items-center gap-2"><Zap size={18} className="text-yellow-400" /> 快速攻略</h2>
+              {selectedGame.link && (
+                <a href={selectedGame.link} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-indigo-400 flex items-center gap-1 hover:text-indigo-300 bg-indigo-500/10 px-2 py-1 rounded-lg">
+                  外部攻略 <ExternalLink size={12} />
+                </a>
+              )}
+            </div>
+            <div className="space-y-3">
+              {selectedGame.guide.length > 0 ? selectedGame.guide.map((item, idx) => (
+                <div key={idx} className="bg-gray-800 rounded-xl p-4 border border-gray-700 shadow-sm">
+                  <h3 className="text-indigo-300 font-bold text-sm mb-1.5 flex items-center gap-2"><span className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span>{item.section}</h3>
+                  <p className="text-gray-300 text-sm leading-relaxed pl-3.5 border-l border-gray-700">{item.text}</p>
+                </div>
+              )) : (
+                <div className="text-gray-500 text-sm italic p-4 bg-gray-800/50 rounded-xl border border-gray-700/50">
+                  暂无内置攻略，请点击上方紫色按钮生成 AI 攻略。
+                </div>
+              )}
+            </div>
+         </section>
+         <Card className="bg-green-900/10 border-green-500/20 flex items-center gap-4">
+           <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center text-green-400"><Users size={20} /></div>
+           <div><p className="text-green-100 text-sm font-bold">支持 {selectedGame.players} 游玩</p><p className="text-green-100/60 text-xs">请确保连接了足够数量的手柄</p></div>
+         </Card>
+       </div>
     </div>
   );
 
@@ -523,57 +567,6 @@ export default function GameLoungeApp() {
           </div>
         </section>
       </div>
-    </div>
-  );
-
-  const renderGameDetail = () => (
-    <div className="animate-fade-in pb-24">
-       <div className="relative h-64 -mx-4 -mt-4 mb-6 group">
-         <ReliableImage src={selectedGame.image} alt={selectedGame.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"/>
-         <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/40 to-transparent"></div>
-         <button onClick={() => setView('game-list')} className="absolute top-4 left-4 bg-black/40 p-2 rounded-full text-white backdrop-blur-md z-10 hover:bg-black/60 transition"><ChevronLeft size={24} /></button>
-         <div className="absolute bottom-0 left-0 right-0 p-4">
-           <h1 className="text-2xl font-bold text-white mb-2 leading-tight drop-shadow-lg">{selectedGame.title}</h1>
-           <div className="flex flex-wrap gap-2">
-             {selectedGame.tags.map(tag => (
-               <span key={tag} className="px-2 py-0.5 bg-white/10 backdrop-blur-md rounded border border-white/20 text-xs text-white">{tag}</span>
-             ))}
-           </div>
-         </div>
-       </div>
-
-       <div className="space-y-6">
-         <section>
-           <Button variant="gemini" className="w-full flex items-center justify-between" onClick={() => askAboutGame(selectedGame.title, 'guide')}>
-             <span className="flex items-center gap-2"><Sparkles size={18} /> 生成该游戏的 AI 深度攻略</span>
-             <ChevronLeft size={18} className="rotate-180" />
-           </Button>
-         </section>
-
-         <section>
-           <h2 className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-2 flex items-center gap-2"><Info size={14}/> 游戏简介</h2>
-           <p className="text-gray-300 text-sm leading-relaxed bg-gray-800/30 p-3 rounded-xl border border-gray-700/30">{selectedGame.description}</p>
-         </section>
-
-         <section>
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-white font-bold flex items-center gap-2"><Zap size={18} className="text-yellow-400" /> 快速攻略</h2>
-              {selectedGame.link && <a href={selectedGame.link} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-indigo-400 flex items-center gap-1 hover:text-indigo-300 bg-indigo-500/10 px-2 py-1 rounded-lg">外部攻略 <ExternalLink size={12} /></a>}
-            </div>
-            <div className="space-y-3">
-              {selectedGame.guide.map((item, idx) => (
-                <div key={idx} className="bg-gray-800 rounded-xl p-4 border border-gray-700 shadow-sm">
-                  <h3 className="text-indigo-300 font-bold text-sm mb-1.5 flex items-center gap-2"><span className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span>{item.section}</h3>
-                  <p className="text-gray-300 text-sm leading-relaxed pl-3.5 border-l border-gray-700">{item.text}</p>
-                </div>
-              ))}
-            </div>
-         </section>
-         <Card className="bg-green-900/10 border-green-500/20 flex items-center gap-4">
-           <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center text-green-400"><Users size={20} /></div>
-           <div><p className="text-green-100 text-sm font-bold">支持 {selectedGame.players} 同屏</p><p className="text-green-100/60 text-xs">请确保连接了足够数量的手柄</p></div>
-         </Card>
-       </div>
     </div>
   );
 
@@ -650,11 +643,12 @@ export default function GameLoungeApp() {
               </div>
             </div>
           )}
+          {view === 'game-catalog' && renderCatalog()}
           {view === 'game-detail' && renderGameDetail()}
           {view === 'ai-chat' && renderAiChat()}
         </main>
 
-        {view !== 'ai-chat' && (
+        {view !== 'ai-chat' && view !== 'game-catalog' && (
           <div className="sticky bottom-0 bg-gray-900/90 backdrop-blur-lg border-t border-gray-800 p-2 grid grid-cols-5 gap-1 z-50 pb-safe">
              <button onClick={() => setView('home')} className={`flex flex-col items-center justify-center p-2 rounded-xl transition-all active:scale-95 ${view === 'home' || view === 'console' ? 'text-indigo-400 bg-indigo-500/10 font-bold' : 'text-gray-500'}`}><Gamepad2 size={24} /><span className="text-[10px] mt-1">首页</span></button>
              <button onClick={() => setView('game-list')} className={`flex flex-col items-center justify-center p-2 rounded-xl transition-all active:scale-95 ${view.includes('game') ? 'text-indigo-400 bg-indigo-500/10 font-bold' : 'text-gray-500'}`}><BookOpen size={24} /><span className="text-[10px] mt-1">攻略</span></button>
